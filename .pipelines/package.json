@@ -1,0 +1,16 @@
+{
+  "name": "olve-engine3d-pipeline",
+  "private": true,
+  "type": "module",
+  "main": "pipeline.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@olivervea/pipelines": "2.0.0-beta.45"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.3",
+    "typescript": "7.0.2"
+  }
+}
