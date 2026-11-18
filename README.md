@@ -4,7 +4,7 @@ A 3D engine in C# on WebGPU, written from scratch. The same code runs on the des
 browser (the browser's own WebGPU), with windowing and input from [Silk.NET](https://github.com/dotnet/Silk.NET).
 It is the engine behind *On Track To Grow*, a train-network builder.
 
-**Try it:** [engine.ovea.pro](https://engine.ovea.pro) runs a sample of this engine in your browser (it needs WebGPU).
+**Try it:** [engine.ovea.pro](https://engine.ovea.pro) is a small modular synthesizer built on this engine, running in your browser (it needs WebGPU). Patch cables between the modules and play it with your keyboard.
 
 ## What's in it
 

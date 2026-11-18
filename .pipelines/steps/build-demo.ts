@@ -6,7 +6,7 @@ const OUT = "/work/out";
 
 export const buildDemoStep = implement(step({
   name: "build-demo",
-  description: "Publishes the browser sample (wasm) as the demo's static files.",
+  description: "Publishes the browser synthesizer sample (wasm) as the demo's static files.",
   image: "mcr.microsoft.com/dotnet/sdk:11.0",
   input: { source: Source },
   output: Site,

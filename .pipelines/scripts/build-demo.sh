@@ -1,5 +1,5 @@
 #!/bin/sh
-# Publishes the browser sample. Emscripten needs python3 and downloads the emdawnwebgpu port on the
+# Publishes the browser synthesizer sample. Emscripten needs python3 and downloads the emdawnwebgpu port on the
 # first build; temporary files go to the container's filesystem (/olve is a small emptyDir).
 set -e
 export DEBIAN_FRONTEND=noninteractive
@@ -12,6 +12,6 @@ cp -a "$TREE" "$WORK"
 cd "$WORK"
 
 dotnet workload install wasm-tools
-dotnet publish samples/Olve.Engine3D.Samples.Triangle.Web/Olve.Engine3D.Samples.Triangle.Web.csproj \
+dotnet publish samples/Olve.Engine3D.Samples.Synth.Web/Olve.Engine3D.Samples.Synth.Web.csproj \
   --configuration Release --output "$OUT"
 ls "$OUT/wwwroot"
