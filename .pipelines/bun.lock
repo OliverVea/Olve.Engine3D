@@ -5,7 +5,7 @@
     "": {
       "name": "olve-engine3d-pipeline",
       "dependencies": {
-        "@olivervea/pipelines": "2.0.0-beta.45",
+        "@olivervea/pipelines": "2.0.0-beta.47",
       },
       "devDependencies": {
         "@types/bun": "1.4.3",
@@ -14,7 +14,7 @@
     },
   },
   "packages": {
-    "@olivervea/pipelines": ["@olivervea/pipelines@2.0.0-beta.45", "", { "dependencies": { "zod": "4.6.7" }, "bin": { "olve-dev": "src/dev/cli.ts", "olve-build": "src/build/cli.ts" } }, "sha512-TEVlWf+XZe1gYRAU3QbmQ0txT+2NO2+GOl+pdim0hYVa1ATvD5am7Lq5v+b/gLhuvfeqnqSkPec6JtiyfWAtAg=="],
+    "@olivervea/pipelines": ["@olivervea/pipelines@2.0.0-beta.47", "", { "dependencies": { "zod": "4.6.7" }, "bin": { "olve-dev": "src/dev/cli.ts", "olve-build": "src/build/cli.ts" } }, "sha512-5hj+8Htc8SDXsxZkZuSVgI/edV0gc7g4jVODRmJec2JS54xwdzZ59YeJ7w5kMuv04jzlfJrJhh5mMc4sTYYxJA=="],
 
     "@types/bun": ["@types/bun@1.4.3", "", { "dependencies": { "bun-types": "1.4.3" } }, "sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw=="],
 
