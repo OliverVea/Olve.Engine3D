@@ -3,7 +3,7 @@
 import { pipeline, steps } from "@olivervea/pipelines";
 import { DEMO } from "./config";
 import * as M from "./models";
-import { GITHUB_TOKEN, SSH_PRIVATE_KEY } from "./shared";
+import { CLOUDFLARE_API_TOKEN, GITHUB_TOKEN } from "./shared";
 import { buildDemoStep } from "./steps/build-demo";
 
 const source = steps.gitHubSource({
@@ -12,14 +12,7 @@ const source = steps.gitHubSource({
   token: GITHUB_TOKEN,
 });
 
-const demo = steps.staticSite({
-  name: "demo",
-  repository: DEMO.repository,
-  registryMap: DEMO.registryMap,
-  wasm: true,
-});
-
-const describeDeploy = "Deploys the demo's image with Helm and checks it serves; the public route to it is the homelab's.";
+const demo = steps.staticSite({ name: "demo", wasm: true });
 
 export default pipeline({
   name: "Olve.Engine3D",
@@ -29,8 +22,11 @@ export default pipeline({
   .onPush(e => ({ repo: e.repository.full_name, sha: e.after }))
   .stage([source, from => ({ repo: from.input.repo, sha: from.input.sha })])
   .stage(buildDemoStep)
-  .stage(demo.image)
-  .select(DEMO.target, {
-    ssh: (p, target) => p.stage(demo.deploy({ name: "deploy-demo", description: describeDeploy, target, sshKey: SSH_PRIVATE_KEY })),
-    inCluster: (p, target) => p.stage(demo.deploy({ name: "deploy-demo", description: describeDeploy, target })),
-  });
+  .stage(demo.pages({
+    name: "publish-demo",
+    description: "Publishes the demo to Cloudflare Pages and checks it serves.",
+    accountId: DEMO.accountId,
+    project: DEMO.project,
+    apiToken: CLOUDFLARE_API_TOKEN,
+    link: DEMO.link,
+  }));
