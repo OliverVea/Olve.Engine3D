@@ -1,0 +1,105 @@
+using EngineKey = Olve.Engine3D.Input.Key;
+using EngineMouseButton = Olve.Engine3D.Input.MouseButton;
+using SilkKey = Silk.NET.Input.Key;
+using SilkMouseButton = Silk.NET.Input.MouseButton;
+
+namespace Olve.Engine3D.Platform.Desktop;
+
+/// <summary>
+/// Translates Silk.NET input codes into the engine's input types.
+/// </summary>
+internal static class SilkInputMapping
+{
+    public static EngineKey ToEngine(this SilkKey key) => key switch
+    {
+        SilkKey.A => EngineKey.A,
+        SilkKey.B => EngineKey.B,
+        SilkKey.C => EngineKey.C,
+        SilkKey.D => EngineKey.D,
+        SilkKey.E => EngineKey.E,
+        SilkKey.F => EngineKey.F,
+        SilkKey.G => EngineKey.G,
+        SilkKey.H => EngineKey.H,
+        SilkKey.I => EngineKey.I,
+        SilkKey.J => EngineKey.J,
+        SilkKey.K => EngineKey.K,
+        SilkKey.L => EngineKey.L,
+        SilkKey.M => EngineKey.M,
+        SilkKey.N => EngineKey.N,
+        SilkKey.O => EngineKey.O,
+        SilkKey.P => EngineKey.P,
+        SilkKey.Q => EngineKey.Q,
+        SilkKey.R => EngineKey.R,
+        SilkKey.S => EngineKey.S,
+        SilkKey.T => EngineKey.T,
+        SilkKey.U => EngineKey.U,
+        SilkKey.V => EngineKey.V,
+        SilkKey.W => EngineKey.W,
+        SilkKey.X => EngineKey.X,
+        SilkKey.Y => EngineKey.Y,
+        SilkKey.Z => EngineKey.Z,
+        SilkKey.Number0 => EngineKey.Number0,
+        SilkKey.Number1 => EngineKey.Number1,
+        SilkKey.Number2 => EngineKey.Number2,
+        SilkKey.Number3 => EngineKey.Number3,
+        SilkKey.Number4 => EngineKey.Number4,
+        SilkKey.Number5 => EngineKey.Number5,
+        SilkKey.Number6 => EngineKey.Number6,
+        SilkKey.Number7 => EngineKey.Number7,
+        SilkKey.Number8 => EngineKey.Number8,
+        SilkKey.Number9 => EngineKey.Number9,
+        SilkKey.F1 => EngineKey.F1,
+        SilkKey.F2 => EngineKey.F2,
+        SilkKey.F3 => EngineKey.F3,
+        SilkKey.F4 => EngineKey.F4,
+        SilkKey.F5 => EngineKey.F5,
+        SilkKey.F6 => EngineKey.F6,
+        SilkKey.F7 => EngineKey.F7,
+        SilkKey.F8 => EngineKey.F8,
+        SilkKey.F9 => EngineKey.F9,
+        SilkKey.F10 => EngineKey.F10,
+        SilkKey.F11 => EngineKey.F11,
+        SilkKey.F12 => EngineKey.F12,
+        SilkKey.Up => EngineKey.Up,
+        SilkKey.Down => EngineKey.Down,
+        SilkKey.Left => EngineKey.Left,
+        SilkKey.Right => EngineKey.Right,
+        SilkKey.ShiftLeft => EngineKey.ShiftLeft,
+        SilkKey.ShiftRight => EngineKey.ShiftRight,
+        SilkKey.ControlLeft => EngineKey.ControlLeft,
+        SilkKey.ControlRight => EngineKey.ControlRight,
+        SilkKey.AltLeft => EngineKey.AltLeft,
+        SilkKey.AltRight => EngineKey.AltRight,
+        SilkKey.Space => EngineKey.Space,
+        SilkKey.Enter => EngineKey.Enter,
+        SilkKey.Escape => EngineKey.Escape,
+        SilkKey.Backspace => EngineKey.Backspace,
+        SilkKey.Tab => EngineKey.Tab,
+        SilkKey.Delete => EngineKey.Delete,
+        SilkKey.Insert => EngineKey.Insert,
+        SilkKey.Home => EngineKey.Home,
+        SilkKey.End => EngineKey.End,
+        SilkKey.PageUp => EngineKey.PageUp,
+        SilkKey.PageDown => EngineKey.PageDown,
+        SilkKey.Minus => EngineKey.Minus,
+        SilkKey.Equal => EngineKey.Equal,
+        SilkKey.Period => EngineKey.Period,
+        SilkKey.Comma => EngineKey.Comma,
+        SilkKey.Slash => EngineKey.Slash,
+        SilkKey.Semicolon => EngineKey.Semicolon,
+        SilkKey.Apostrophe => EngineKey.Apostrophe,
+        SilkKey.LeftBracket => EngineKey.LeftBracket,
+        SilkKey.RightBracket => EngineKey.RightBracket,
+        SilkKey.BackSlash => EngineKey.BackSlash,
+        SilkKey.GraveAccent => EngineKey.GraveAccent,
+        _ => EngineKey.Unknown,
+    };
+
+    public static EngineMouseButton? ToEngine(this SilkMouseButton button) => button switch
+    {
+        SilkMouseButton.Left => EngineMouseButton.Left,
+        SilkMouseButton.Right => EngineMouseButton.Right,
+        SilkMouseButton.Middle => EngineMouseButton.Middle,
+        _ => null,
+    };
+}

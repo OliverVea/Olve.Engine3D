@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Olve.Results" />
+        <PackageReference Include="Olve.WebGPU" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
+    </ItemGroup>
+</Project>

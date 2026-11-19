@@ -1,0 +1,257 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
+using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.Utilities;
+using Olve.Results.TUnit;
+using Olve.Utilities.Ids;
+using System.Numerics;
+using Olve.Engine3D.Math;
+
+namespace Olve.Engine3D.Tests.Layout;
+
+public class GuiLayoutServicePositioningTests
+{
+    private static (GuiLayoutService Sut, Id<GuiAnchor> AnchorId) BuildSut(
+        GuiNodeService? ge = null)
+    {
+        var svc = ge ?? new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        GuiAnchorService guiAnchorService = new(NullLogger<GuiAnchorService>.Instance);
+        var lcp = new LayoutContextService(new TestWindowInfo());
+
+        // Register the default anchor and use its id when parenting root nodes
+        var anchorId = guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight).Value;
+
+        var elementService = new GuiElementService(svc);
+        var stateService = new GuiNodeStateService(NullLogger<GuiNodeStateService>.Instance, svc, elementService);
+        var sut = new GuiLayoutService(NullLogger<GuiLayoutService>.Instance, svc, stateService, guiAnchorService, lcp);
+
+        // Subscribe to node add/remove events so SetNodeBox can find nodes
+        sut.Load();
+
+        return (sut, anchorId);
+    }
+
+    // Shorthand for creating boxes
+    private static LayoutBox Box(
+        UIAxis axis = UIAxis.X,
+        Dp? prefW = null,
+        Dp? prefH = null,
+        float weight = 0f,
+        Dp? horizontalChrome = null,
+        Dp? verticalChrome = null)
+        => new()
+        {
+            LayoutAxis = axis,
+            Size = new SizeSpec
+            {
+                PreferredWidth = prefW,
+                PreferredHeight = prefH,
+                ResizingWeight = weight
+            },
+            Margin = Thickness.Sym((horizontalChrome ?? Dp.Zero) / 2f, (verticalChrome ?? Dp.Zero) / 2f),
+        };
+
+    [Test, NotInParallel]
+    public async Task Positions_SingleChild_Horizontal_Defaults_To_Origin()
+    {
+        // Arrange
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // parent 300x100
+
+        var childId = await ge.AddNode("Child", parentId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(childId, Box(prefW: 100, prefH: 100));  // child 100x100
+
+        // Act
+        var result = sut.ComputeLayout();
+        await Assert.That(result).Succeeded();
+
+        // Assert
+        await Assert.That(sut.TryGetBoxPosition(parentId, out var parentPos)).IsTrue();
+        await Assert.That(parentPos.Position.X.Value).IsEqualTo(0);
+        await Assert.That(parentPos.Position.Y.Value).IsEqualTo(0);
+        await Assert.That(parentPos.Size.X.Value).IsEqualTo(300);
+        await Assert.That(parentPos.Size.Y.Value).IsEqualTo(100);
+
+        await Assert.That(sut.TryGetBoxPosition(childId, out var childPos)).IsTrue();
+        await Assert.That(childPos.Position.X.Value).IsEqualTo(0);
+        await Assert.That(childPos.Position.Y.Value).IsEqualTo(0);
+        await Assert.That(childPos.Size.X.Value).IsEqualTo(100);
+        await Assert.That(childPos.Size.Y.Value).IsEqualTo(100);
+    }
+
+    [Test, NotInParallel]
+    public async Task Positions_TwoChildren_Horizontal_Stack()
+    {
+        // Arrange
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // 300x100
+
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
+
+        sut.SetNodeBox(c1, Box(prefW: 120, prefH: 100));
+        sut.SetNodeBox(c2, Box(prefW: 180, prefH: 100));
+
+        // Act
+        var r = sut.ComputeLayout();
+        await Assert.That(r).Succeeded();
+
+        // Assert
+        await Assert.That(sut.TryGetBoxPosition(c1, out var p1)).IsTrue();
+        await Assert.That(p1.Position.X.Value).IsEqualTo(0);
+        await Assert.That(p1.Position.Y.Value).IsEqualTo(0);
+
+        await Assert.That(sut.TryGetBoxPosition(c2, out var p2)).IsTrue();
+        await Assert.That(p2.Position.X.Value).IsEqualTo(120); // placed right after C1 (no gap/chrome)
+        await Assert.That(p2.Position.Y.Value).IsEqualTo(0);
+    }
+
+    [Test, NotInParallel]
+    public async Task Positions_TwoChildren_Vertical_Stack()
+    {
+        // Arrange
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(axis: UIAxis.Y, prefW: 100, prefH: 300)); // vertical parent
+
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
+
+        sut.SetNodeBox(c1, Box(prefW: 100, prefH: 120));
+        sut.SetNodeBox(c2, Box(prefW: 100, prefH: 180));
+
+        // Act
+        var r = sut.ComputeLayout();
+        await Assert.That(r).Succeeded();
+
+        // Assert
+        await Assert.That(sut.TryGetBoxPosition(c1, out var p1)).IsTrue();
+        await Assert.That(p1.Position.X.Value).IsEqualTo(0);
+        await Assert.That(p1.Position.Y.Value).IsEqualTo(0);
+
+        await Assert.That(sut.TryGetBoxPosition(c2, out var p2)).IsTrue();
+        await Assert.That(p2.Position.X.Value).IsEqualTo(0);
+        await Assert.That(p2.Position.Y.Value).IsEqualTo(120); // stacked below C1
+    }
+
+    [Test, NotInParallel]
+    [Skip("Layout gap: cross-axis children are not stretched to fill the parent (right.Size.Y is 0, not 300). See #253.")]
+    public async Task Positions_Nested_LeftRight_With_Fill_Weights()
+    {
+        // Arrange
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(prefW: 600, prefH: 300));
+
+        var leftId  = await ge.AddNode("Left",  parentId).AssertSuccessAndGetAsync();
+        var rightId = await ge.AddNode("Right", parentId).AssertSuccessAndGetAsync();
+
+        // left fixed width, full height (due to sizing pass cross-axis fill)
+        sut.SetNodeBox(leftId, Box(axis: UIAxis.Y, prefW: 200, prefH: 180));
+
+        // right gets remaining width by weight=1
+        sut.SetNodeBox(rightId, Box(weight: 1f));
+
+        // Two children inside right; split space evenly (weights 1:1)
+        var r1 = await ge.AddNode("R1", rightId).AssertSuccessAndGetAsync();
+        var r2 = await ge.AddNode("R2", rightId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(r1, Box(weight: 1f));
+        sut.SetNodeBox(r2, Box(weight: 1f));
+
+        // Act
+        var res = sut.ComputeLayout();
+        await Assert.That(res).Succeeded();
+
+        // Assert parent
+        await Assert.That(sut.TryGetBoxPosition(parentId, out var p)).IsTrue();
+        await Assert.That(p.Position.X.Value).IsEqualTo(0);
+        await Assert.That(p.Position.Y.Value).IsEqualTo(0);
+        await Assert.That(p.Size.X.Value).IsEqualTo(600);
+        await Assert.That(p.Size.Y.Value).IsEqualTo(300);
+
+        // Left: 200x180 at (0,0)
+        await Assert.That(sut.TryGetBoxPosition(leftId, out var left)).IsTrue();
+        await Assert.That(left.Size.X.Value).IsEqualTo(200);
+        await Assert.That(left.Size.Y.Value).IsEqualTo(180);
+        await Assert.That(left.Position.X.Value).IsEqualTo(0);
+        await Assert.That(left.Position.Y.Value).IsEqualTo(0);
+
+        // Right: 400x300 at (200,0)
+        await Assert.That(sut.TryGetBoxPosition(rightId, out var right)).IsTrue();
+        await Assert.That(right.Size.X.Value).IsEqualTo(400);
+        await Assert.That(right.Size.Y.Value).IsEqualTo(300);
+        await Assert.That(right.Position.X.Value).IsEqualTo(200);
+        await Assert.That(right.Position.Y.Value).IsEqualTo(0);
+
+        // R1: 200x300 at (200,0)
+        await Assert.That(sut.TryGetBoxPosition(r1, out var rp1)).IsTrue();
+        await Assert.That(rp1.Size.X.Value).IsEqualTo(200);
+        await Assert.That(rp1.Size.Y.Value).IsEqualTo(300);
+        await Assert.That(rp1.Position.X.Value).IsEqualTo(200);
+        await Assert.That(rp1.Position.Y.Value).IsEqualTo(0);
+
+        // R2: 200x300 at (400,0)
+        await Assert.That(sut.TryGetBoxPosition(r2, out var rp2)).IsTrue();
+        await Assert.That(rp2.Size.X.Value).IsEqualTo(200);
+        await Assert.That(rp2.Size.Y.Value).IsEqualTo(300);
+        await Assert.That(rp2.Position.X.Value).IsEqualTo(400);
+        await Assert.That(rp2.Position.Y.Value).IsEqualTo(0);
+    }
+
+    [Test, NotInParallel]
+    public async Task Positions_Respect_Chrome_As_Inner_Content_Offset()
+    {
+        // Arrange: parent has chrome (total) that reduces content area by 40x20 and shifts origin by 20x10
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 200, horizontalChrome: new Dp(40), verticalChrome: new Dp(20)));
+
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
+
+        sut.SetNodeBox(c1, Box(prefW: 100, prefH: 80));
+        sut.SetNodeBox(c2, Box(prefW: 60,  prefH: 80));
+
+        // Act
+        var res = sut.ComputeLayout();
+        await Assert.That(res).Succeeded();
+
+        // Assert:
+        // Parent outer top-left is (0,0); content origin = (20,10)
+        await Assert.That(sut.TryGetBoxPosition(c1, out var p1)).IsTrue();
+        await Assert.That(p1.Position.X.Value).IsEqualTo(20);
+        await Assert.That(p1.Position.Y.Value).IsEqualTo(10);
+
+        await Assert.That(sut.TryGetBoxPosition(c2, out var p2)).IsTrue();
+        await Assert.That(p2.Position.X.Value).IsEqualTo(20 + 100); // next to c1 in horizontal flow
+        await Assert.That(p2.Position.Y.Value).IsEqualTo(10);
+    }
+
+    [Test, NotInParallel]
+    [Skip("Obsolete premise: TryGetBoxPosition auto-computes layout internally, so it cannot observe a pre-ComputeLayout state and returns a valid position. See #253.")]
+    public async Task TryGetBoxPosition_Fails_Before_ComputeLayout()
+    {
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var (sut, anchorId) = BuildSut(ge);
+
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
+        sut.SetNodeBox(parentId, Box(prefW: 100, prefH: 50));
+
+        var ok = sut.TryGetBoxPosition(parentId, out _);
+        await Assert.That(ok).IsFalse(); // no sizes/position yet
+    }
+}

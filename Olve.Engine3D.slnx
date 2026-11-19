@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="samples/Olve.Engine3D.Samples.Synth.Web/Olve.Engine3D.Samples.Synth.Web.csproj" />
+  <Project Path="samples/Olve.Engine3D.Samples.Synth/Olve.Engine3D.Samples.Synth.csproj" />
+  <Project Path="samples/Olve.Engine3D.Samples.Triangle.Desktop/Olve.Engine3D.Samples.Triangle.Desktop.csproj" />
+  <Project Path="samples/Olve.Engine3D.Samples.Triangle.Web/Olve.Engine3D.Samples.Triangle.Web.csproj" />
+  <Project Path="samples/Olve.Engine3D.Samples.Triangle/Olve.Engine3D.Samples.Triangle.csproj" />
+  <Project Path="src/Olve.Engine3D.Audio.OpenAL/Olve.Engine3D.Audio.OpenAL.csproj" />
+  <Project Path="src/Olve.Engine3D.Graphics.WebGPU/Olve.Engine3D.Graphics.WebGPU.csproj" />
+  <Project Path="src/Olve.Engine3D.Platform.Desktop/Olve.Engine3D.Platform.Desktop.csproj" />
+  <Project Path="src/Olve.Engine3D.Platform.Web/Olve.Engine3D.Platform.Web.csproj" />
+  <Project Path="src/Olve.Engine3D/Olve.Engine3D.csproj" />
+  <Project Path="tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj" />
+</Solution>

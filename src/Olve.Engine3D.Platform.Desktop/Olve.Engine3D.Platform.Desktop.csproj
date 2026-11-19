@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="MemoryPack" />
+        <PackageReference Include="NativeFileDialogNET" />
+        <PackageReference Include="Olve.Paths.Glob" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Olve.WebGPU.Native" />
+        <PackageReference Include="Silk.NET.Input" />
+        <PackageReference Include="Silk.NET.Windowing" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
+        <ProjectReference Include="..\Olve.Engine3D.Audio.OpenAL\Olve.Engine3D.Audio.OpenAL.csproj" />
+        <ProjectReference Include="..\Olve.Engine3D.Graphics.WebGPU\Olve.Engine3D.Graphics.WebGPU.csproj" />
+    </ItemGroup>
+</Project>

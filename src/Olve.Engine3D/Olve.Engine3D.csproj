@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MemoryPack" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Olve.Paths" />
+        <PackageReference Include="Olve.Results" />
+        <PackageReference Include="Olve.Utilities" />
+        <PackageReference Include="Olve.Validation" />
+        <PackageReference Include="StbImageWriteSharp" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="GUI\Layout\ContentFit.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Olve.Engine3D.Tests" />
+    </ItemGroup>
+</Project>

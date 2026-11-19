@@ -1,0 +1,170 @@
+using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Math;
+using Olve.Utilities.Ids;
+
+namespace Olve.Engine3D.Physics3D.Collisions;
+
+public class CollisionSystem
+{
+    private readonly record struct ColliderEntry(
+        IColliderShape Shape,
+        Id<ColliderGroup> Group,
+        AABB WorldAABB,
+        Matrix4x4 WorldMatrix);
+
+    private readonly Dictionary<Id<Collider>, ColliderEntry> _colliders = new();
+
+    public Event<Id<Collider>> OnColliderRegistered { get; } = new();
+    public Event<Id<Collider>> OnColliderUnregistered { get; } = new();
+    public Event<Id<Collider>> OnColliderTransformUpdated { get; } = new();
+
+    public IEnumerable<Id<Collider>> ColliderIds => _colliders.Keys;
+
+    public Id<Collider> Register(
+        IColliderShape shape,
+        Id<ColliderGroup> group,
+        Matrix4x4 worldMatrix)
+    {
+        var worldAABB = shape.GetWorldAABB(worldMatrix);
+        var colliderId = Id.New<Collider>();
+
+        _colliders[colliderId] = new ColliderEntry(shape, group, worldAABB, worldMatrix);
+
+        OnColliderRegistered.Invoke(colliderId);
+
+        return colliderId;
+    }
+
+    public Id<Collider> RegisterHeightmapCollider(HeightmapData data, Id<ColliderGroup> group)
+    {
+        var shape = new HeightmapColliderShape(data);
+        return Register(shape, group, Matrix4x4.Identity);
+    }
+
+    public Result UpdateTransform(Id<Collider> colliderId, Matrix4x4 worldMatrix)
+    {
+        if (!_colliders.TryGetValue(colliderId, out var entry))
+        {
+            return new ResultProblem("Collider '{0}' not found", colliderId);
+        }
+
+        var worldAABB = entry.Shape.GetWorldAABB(worldMatrix);
+        _colliders[colliderId] = entry with { WorldAABB = worldAABB, WorldMatrix = worldMatrix };
+
+        OnColliderTransformUpdated.Invoke(colliderId);
+
+        return Result.Success();
+    }
+
+    public DeletionResult Unregister(Id<Collider> colliderId)
+    {
+        if (!_colliders.Remove(colliderId))
+        {
+            return DeletionResult.NotFound();
+        }
+
+        OnColliderUnregistered.Invoke(colliderId);
+
+        return DeletionResult.Success();
+    }
+
+    public bool ColliderExists(Id<Collider> colliderId) => _colliders.ContainsKey(colliderId);
+
+    public bool TryGetColliderInfo(
+        Id<Collider> colliderId,
+        out IColliderShape shape,
+        out Matrix4x4 worldMatrix,
+        out AABB worldAABB)
+    {
+        if (_colliders.TryGetValue(colliderId, out var entry))
+        {
+            shape = entry.Shape;
+            worldMatrix = entry.WorldMatrix;
+            worldAABB = entry.WorldAABB;
+            return true;
+        }
+
+        shape = default!;
+        worldMatrix = default;
+        worldAABB = default;
+        return false;
+    }
+
+    public IReadOnlyList<RaycastHit> Raycast(Ray ray)
+    {
+        var hits = new List<RaycastHit>();
+
+        foreach (var (colliderId, entry) in _colliders)
+        {
+            if (TryHit(ray, colliderId, entry, out var hit))
+            {
+                hits.Add(hit);
+            }
+        }
+
+        hits.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+        return hits;
+    }
+
+    public IReadOnlyList<RaycastHit> Raycast(Ray ray, Id<ColliderGroup> group)
+    {
+        var hits = new List<RaycastHit>();
+
+        foreach (var (colliderId, entry) in _colliders)
+        {
+            if (entry.Group != group) continue;
+
+            if (TryHit(ray, colliderId, entry, out var hit))
+            {
+                hits.Add(hit);
+            }
+        }
+
+        hits.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+        return hits;
+    }
+
+    public IEnumerable<OverlapHit> QueryOverlapAABB(AABB queryAABB, IReadOnlySet<Id<ColliderGroup>>? allowedColliderGroups = null)
+    {
+        var hits = new List<OverlapHit>();
+
+        foreach (var (colliderId, entry) in _colliders)
+        {
+            if (entry.WorldAABB.Intersects(queryAABB))
+            {
+                if (!allowedColliderGroups?.Contains(entry.Group) == true)
+                {
+                    continue;
+                }
+
+                hits.Add(new OverlapHit(colliderId, entry.Group));
+            }
+        }
+
+        return hits;
+    }
+
+    private static bool TryHit(
+        Ray ray,
+        Id<Collider> colliderId,
+        in ColliderEntry entry,
+        out RaycastHit hit)
+    {
+        // Broad phase: test against world-space AABB
+        if (!entry.WorldAABB.TryIntersectRay(ray, out _))
+        {
+            hit = default;
+            return false;
+        }
+
+        // Narrow phase: delegate to shape
+        if (entry.Shape.TryRaycast(ray, entry.WorldMatrix, out var distance, out var hitPosition))
+        {
+            hit = new RaycastHit(colliderId, entry.Group, distance, hitPosition);
+            return true;
+        }
+
+        hit = default;
+        return false;
+    }
+}

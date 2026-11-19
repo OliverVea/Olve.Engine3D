@@ -1,0 +1,94 @@
+using Microsoft.Extensions.Logging;
+using Olve.Engine3D.GUI.Layout;
+using Olve.Utilities.Ids;
+
+namespace Olve.Engine3D.GUI;
+
+public class GuiAnchorService(ILogger<GuiAnchorService> logger)
+{
+    private readonly Dictionary<Id<GuiAnchor>, GuiAnchor> _anchors = new();
+
+    /// <summary>An anchor moved or changed, so what hangs from it must be laid out again.</summary>
+    public Event<Id<GuiAnchor>> OnAnchorChanged { get; } = new();
+
+    public Result<Id<GuiAnchor>> RegisterAnchor(AnchorPosition position, GrowthDirection growth, int depth = 0)
+    {
+        var anchorId = Id.New<GuiAnchor>();
+        var anchor = new GuiAnchor(anchorId, position, growth, depth);
+        _anchors[anchorId] = anchor;
+        logger.LogDebug(
+            "Registered anchor '{AnchorId}' at position ({HPos}, {VPos}) with growth ({HGrowth}, {VGrowth}). Total anchors: {Count}",
+            anchorId, position.Horizontal, position.Vertical, growth.Horizontal, growth.Vertical, _anchors.Count);
+        return anchorId;
+    }
+
+    public Result<Id<GuiAnchor>> RegisterAnchor(
+        Id<GuiNode> referenceNode,
+        AnchorPosition position,
+        GrowthDirection growth,
+        int depth = 0)
+    {
+        var anchorId = Id.New<GuiAnchor>();
+        var anchor = new GuiAnchor(anchorId, position, growth, depth, referenceNode);
+        _anchors[anchorId] = anchor;
+        logger.LogDebug(
+            "Registered relative anchor '{AnchorId}' referencing node '{ReferenceNode}' at position ({HPos}, {VPos}) with growth ({HGrowth}, {VGrowth}). Total anchors: {Count}",
+            anchorId, referenceNode, position.Horizontal, position.Vertical, growth.Horizontal, growth.Vertical, _anchors.Count);
+        return anchorId;
+    }
+
+    /// <summary>An anchor at a point on the screen (from the top left), e.g. for a tooltip at the pointer.</summary>
+    public Result<Id<GuiAnchor>> RegisterAnchorAt(Vector2<Dp> point, GrowthDirection growth, int depth = 0)
+    {
+        var anchorId = Id.New<GuiAnchor>();
+        _anchors[anchorId] = new GuiAnchor(anchorId, AnchorPosition.TopLeft, growth, depth, Offset: point);
+        logger.LogDebug("Registered anchor '{AnchorId}' at a point. Total anchors: {Count}", anchorId, _anchors.Count);
+        return anchorId;
+    }
+
+    /// <summary>Moves an anchor registered at a point; it may move every frame, so it isn't logged.</summary>
+    public Result MoveAnchor(Id<GuiAnchor> anchorId, Vector2<Dp> point, GrowthDirection growth)
+    {
+        if (!_anchors.TryGetValue(anchorId, out var anchor))
+        {
+            return new ResultProblem("Anchor '{0}' not found", anchorId);
+        }
+
+        _anchors[anchorId] = anchor with { Offset = point, Growth = growth };
+        OnAnchorChanged.Invoke(anchorId);
+        return Result.Success();
+    }
+
+    public bool TryGetAnchor(Id<GuiAnchor> anchorId, out GuiAnchor anchor)
+        => _anchors.TryGetValue(anchorId, out anchor);
+
+    public Result UpdateAnchor(Id<GuiAnchor> anchorId, GuiAnchor anchor)
+    {
+        if (anchor.Id != anchorId)
+        {
+            return new ResultProblem("Anchor ID mismatch: expected '{0}', got '{1}'", anchorId, anchor.Id);
+        }
+
+        if (!_anchors.ContainsKey(anchorId))
+        {
+            return new ResultProblem("Anchor '{0}' not found", anchorId);
+        }
+
+        _anchors[anchorId] = anchor;
+        OnAnchorChanged.Invoke(anchorId);
+        logger.LogDebug("Updated anchor '{AnchorId}'. Total anchors: {Count}", anchorId, _anchors.Count);
+        return Result.Success();
+    }
+
+    public void UnregisterAnchor(Id<GuiAnchor> anchorId)
+    {
+        if (_anchors.Remove(anchorId))
+        {
+            logger.LogDebug("Unregistered anchor '{AnchorId}'. Total anchors: {Count}", anchorId, _anchors.Count);
+        }
+        else
+        {
+            logger.LogWarning("Failed to unregister anchor '{AnchorId}': anchor not found. Total anchors: {Count}", anchorId, _anchors.Count);
+        }
+    }
+}
